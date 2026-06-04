@@ -1,0 +1,283 @@
+{
+  "info": {
+    "name": "LinkFlow — Studio (Roteiros)",
+    "_postman_id": "linkflow-studio-v1",
+    "description": "Endpoints do studio de roteiros AI (POST/GET /api/studio/*). Todos exigem JWT — use a pasta Auth para obter o token antes de testar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "Access token JWT retornado pelo login"
+    },
+    {
+      "key": "scriptId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do roteiro — preenchido automaticamente após geração"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do produto do Radar (opcional)"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Obter token JWT para usar nas demais requisições",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.accessToken);",
+                  "  console.log('Token salvo na variável {{token}}');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seu@email.com\",\n  \"password\": \"suaSenha123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Faz login e salva automaticamente o `accessToken` na variável `{{token}}` da coleção."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roteiros",
+      "description": "Geração e consulta de roteiros via IA",
+      "item": [
+        {
+          "name": "Gerar roteiro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('scriptId', json.id);",
+                  "  console.log('scriptId salvo: ' + json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Airfryer Philips Walita 4.1L Digital\",\n  \"productHighlights\": \"Tecnologia Rapid Air, 7 programas pré-definidos, timer digital, capacidade 4.1L\",\n  \"platform\": \"INSTAGRAM\",\n  \"format\": \"REVIEW\",\n  \"tone\": \"animado e descontraído\",\n  \"duration\": \"60 segundos\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            },
+            "description": "Gera um roteiro de vídeo usando IA (Claude). Retorna `201 Created` com o roteiro completo.\n\n**Campos obrigatórios:** `productName`, `platform`, `format`, `tone`, `duration`\n\n**platform:** `YOUTUBE` | `INSTAGRAM` | `TIKTOK`\n\n**format:** `REVIEW` | `UNBOXING` | `VALE_A_PENA` | `COMPARATIVO` | `DICAS_DE_USO`\n\nO `id` do roteiro é salvo automaticamente na variável `{{scriptId}}`."
+          }
+        },
+        {
+          "name": "Gerar roteiro — com produto do Radar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('scriptId', json.id);",
+                  "  console.log('scriptId salvo: ' + json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"productName\": \"Airfryer Philips Walita 4.1L Digital\",\n  \"productHighlights\": \"Tecnologia Rapid Air, desconto de 30%, frete grátis\",\n  \"platform\": \"TIKTOK\",\n  \"format\": \"VALE_A_PENA\",\n  \"tone\": \"direto e persuasivo\",\n  \"duration\": \"30 segundos\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            },
+            "description": "Igual ao anterior, mas vincula o roteiro a um produto do Radar via `productId` (UUID). Use `{{productId}}` preenchido manualmente ou via script após busca no Radar."
+          }
+        },
+        {
+          "name": "Listar meus roteiros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Número da página (0-based)"
+                }
+              ]
+            },
+            "description": "Retorna o histórico paginado de roteiros do usuário autenticado, ordenados por data de criação decrescente."
+          }
+        },
+        {
+          "name": "Buscar roteiro por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros/{{scriptId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros", "{{scriptId}}"]
+            },
+            "description": "Busca um roteiro específico pelo UUID. Retorna `404` se não pertencer ao usuário autenticado. A variável `{{scriptId}}` é preenchida automaticamente após a geração."
+          }
+        },
+        {
+          "name": "Roteiros de um produto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros/produto/{{productId}}?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros", "produto", "{{productId}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Número da página (0-based)"
+                }
+              ]
+            },
+            "description": "Lista todos os roteiros gerados para um produto específico (pelo UUID do produto do Radar). Filtra apenas os roteiros do usuário autenticado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exemplos de body por formato",
+      "description": "Exemplos prontos para cada combinação de plataforma e formato",
+      "item": [
+        {
+          "name": "YouTube — Unboxing (60s)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"iPhone 15 Pro Max 256GB\",\n  \"productHighlights\": \"Chip A17 Pro, câmera 48MP, titanio, USB-C, ProMotion 120Hz\",\n  \"platform\": \"YOUTUBE\",\n  \"format\": \"UNBOXING\",\n  \"tone\": \"entusiasmado e técnico\",\n  \"duration\": \"60 segundos\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            }
+          }
+        },
+        {
+          "name": "TikTok — Vale a Pena (30s)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Tênis Nike Air Max 270\",\n  \"productHighlights\": \"Câmara de ar Max no calcanhar, solado leve, 12 cores disponíveis\",\n  \"platform\": \"TIKTOK\",\n  \"format\": \"VALE_A_PENA\",\n  \"tone\": \"casual e jovem\",\n  \"duration\": \"30 segundos\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            }
+          }
+        },
+        {
+          "name": "Instagram — Dicas de Uso (45s)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Vitamix A3500 Blender\",\n  \"productHighlights\": \"Motor 2.2HP, 5 programas automáticos, tela touch, 10 anos de garantia\",\n  \"platform\": \"INSTAGRAM\",\n  \"format\": \"DICAS_DE_USO\",\n  \"tone\": \"educativo e inspirador\",\n  \"duration\": \"45 segundos\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            }
+          }
+        },
+        {
+          "name": "YouTube — Comparativo (90s)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Samsung Galaxy S24 Ultra vs iPhone 15 Pro Max\",\n  \"productHighlights\": \"Caneta S-Pen, câmera 200MP, preço R$6.999, vs Apple A17 Pro\",\n  \"platform\": \"YOUTUBE\",\n  \"format\": \"COMPARATIVO\",\n  \"tone\": \"analítico e imparcial\",\n  \"duration\": \"90 segundos\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
