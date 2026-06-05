@@ -1,0 +1,464 @@
+{
+  "info": {
+    "name": "LinkFlow API",
+    "description": "Coleção completa da API LinkFlow — plataforma de criadores afiliados com geração de conteúdo via IA.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registrar usuário",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jonas Neves\",\n  \"email\": \"jonas@example.com\",\n  \"password\": \"senha123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jonas@example.com\",\n  \"password\": \"senha123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Usuário autenticado (me)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "item": [
+        {
+          "name": "Meu perfil",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api", "users", "me"] }
+          }
+        },
+        {
+          "name": "Buscar por e-mail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users?email=jonas@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [{ "key": "email", "value": "jonas@example.com" }]
+            }
+          }
+        },
+        {
+          "name": "Buscar usuário por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Busca avançada (plano / ativo)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?plan=FREE&active=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [
+                { "key": "plan", "value": "FREE" },
+                { "key": "active", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar todos (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/all?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "all"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar por plano",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/plan/:plan",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "plan", ":plan"],
+              "variable": [{ "key": "plan", "value": "FREE" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Radar de Produtos",
+      "item": [
+        {
+          "name": "Buscar produtos",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar?category=eletronicos&platform=mercadolivre&search=fone&page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar"],
+              "query": [
+                { "key": "category", "value": "eletronicos" },
+                { "key": "platform", "value": "mercadolivre" },
+                { "key": "search", "value": "fone" },
+                { "key": "page", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Trending (top 6)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/radar/trending", "host": ["{{baseUrl}}"], "path": ["api", "radar", "trending"] }
+          }
+        },
+        {
+          "name": "Detalhes do produto",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Listar categorias",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/radar/categorias", "host": ["{{baseUrl}}"], "path": ["api", "radar", "categorias"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Studio (Roteiros)",
+      "item": [
+        {
+          "name": "Gerar roteiro",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/studio/roteiro", "host": ["{{baseUrl}}"], "path": ["api", "studio", "roteiro"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"00000000-0000-0000-0000-000000000000\",\n  \"tone\": \"INFORMAL\",\n  \"durationSeconds\": 60\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar meus roteiros",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "Detalhe do roteiro",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Roteiros por produto",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros/produto/:productId?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros", "produto", ":productId"],
+              "query": [{ "key": "page", "value": "0" }],
+              "variable": [{ "key": "productId", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vídeos",
+      "item": [
+        {
+          "name": "Iniciar geração de vídeo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scriptId\": \"00000000-0000-0000-0000-000000000000\",\n  \"avatarId\": \"avatar_default\",\n  \"voiceId\": \"voice_pt_br\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Status do job",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/videos/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Listar meus vídeos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/videos?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Links Afiliados",
+      "item": [
+        {
+          "name": "Criar link",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/links", "host": ["{{baseUrl}}"], "path": ["api", "links"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"00000000-0000-0000-0000-000000000000\",\n  \"destinationUrl\": \"https://produto.example.com/ref=jonas\",\n  \"slug\": \"fone-top\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar meus links",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/links?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "Detalhe do link",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/links/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Deletar link",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/links/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Redirect público",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/r/:username/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["r", ":username", ":slug"],
+              "variable": [
+                { "key": "username", "value": "jonas" },
+                { "key": "slug", "value": "fone-top" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analytics/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "analytics", "dashboard"] }
+          }
+        },
+        {
+          "name": "Disparar relatório semanal",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/analytics/relatorio", "host": ["{{baseUrl}}"], "path": ["api", "analytics", "relatorio"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "item": [
+        {
+          "name": "Progresso do onboarding",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/onboarding", "host": ["{{baseUrl}}"], "path": ["api", "onboarding"] }
+          }
+        }
+      ]
+    }
+  ]
+}
