@@ -1,0 +1,640 @@
+{
+  "info": {
+    "name": "LinkFlow — API Completa",
+    "_postman_id": "linkflow-api-v1",
+    "description": "Coleção completa da API LinkFlow. Execute Login ou Register primeiro para preencher automaticamente a variável {{token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "Access token JWT — preenchido automaticamente pelo Login/Register"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "Refresh token — preenchido automaticamente pelo Login/Register"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do usuário logado — preenchido automaticamente"
+    },
+    {
+      "key": "linkId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do link — preenchido automaticamente após criação"
+    },
+    {
+      "key": "linkSlug",
+      "value": "",
+      "type": "string",
+      "description": "Slug do link — preenchido automaticamente após criação"
+    },
+    {
+      "key": "scriptId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do roteiro — preenchido automaticamente após geração"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do produto — preenchido automaticamente após busca"
+    },
+    {
+      "key": "videoJobId",
+      "value": "",
+      "type": "string",
+      "description": "UUID do job de vídeo — preenchido automaticamente após iniciar geração"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Registro, login, refresh e logout. Execute Register ou Login primeiro — o token é salvo automaticamente.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  pm.collectionVariables.set('userId', json.user.id);",
+                  "  console.log('Token e userId salvos nas variáveis da coleção.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@exemplo.com\",\n  \"password\": \"Senha@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  pm.collectionVariables.set('userId', json.user.id);",
+                  "  console.log('Token e userId salvos nas variáveis da coleção.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@exemplo.com\",\n  \"password\": \"Senha@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "  console.log('Tokens renovados e salvos.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Me (Auth)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "description": "Perfil e busca de usuários. A maioria dos endpoints requer plano PRO.",
+      "item": [
+        {
+          "name": "Meu Perfil",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Buscar por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar por E-mail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users?email=joao@exemplo.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [{ "key": "email", "value": "joao@exemplo.com" }]
+            }
+          }
+        },
+        {
+          "name": "Buscar com Filtros",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?plan=FREE&active=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [
+                { "key": "plan", "value": "FREE" },
+                { "key": "active", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Todos (Paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/all?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "all"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar por Plano",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/plan/FREE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "plan", "FREE"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Links",
+      "description": "Criação e gestão de links afiliados encurtados. O redirecionamento público fica em /r/{slug}.",
+      "item": [
+        {
+          "name": "Criar Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('linkId', json.id);",
+                  "  pm.collectionVariables.set('linkSlug', json.slug);",
+                  "  console.log('linkId e linkSlug salvos nas variáveis da coleção.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationUrl\": \"https://produto.exemplo.com/airfryer\",\n  \"title\": \"Airfryer Philips 4.1L\",\n  \"customSlug\": \"airfryer-philips\",\n  \"campaign\": \"verao-2025\",\n  \"productId\": null,\n  \"scriptId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/links",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"]
+            }
+          }
+        },
+        {
+          "name": "Criar Link (slug automático)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('linkId', json.id);",
+                  "  pm.collectionVariables.set('linkSlug', json.slug);",
+                  "  console.log('linkId e linkSlug salvos.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationUrl\": \"https://produto.exemplo.com/smartwatch\",\n  \"title\": \"Smartwatch Samsung\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/links",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"]
+            }
+          }
+        },
+        {
+          "name": "Listar Meus Links",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/links?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "Buscar Link por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/links/{{linkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", "{{linkId}}"]
+            }
+          }
+        },
+        {
+          "name": "Desativar Link",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/links/{{linkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links", "{{linkId}}"]
+            }
+          }
+        },
+        {
+          "name": "Redirecionar (público)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/r/{{linkSlug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["r", "{{linkSlug}}"]
+            },
+            "description": "Endpoint público de redirecionamento. Retorna 302 com o header Location apontando para a URL de destino."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Studio — Roteiros",
+      "description": "Geração de roteiros de vídeo com IA (Claude). Requer autenticação e respeita limites do plano.",
+      "item": [
+        {
+          "name": "Gerar Roteiro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('scriptId', json.id);",
+                  "  console.log('scriptId salvo:', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": null,\n  \"productName\": \"Airfryer Philips Walita 4.1L\",\n  \"productHighlights\": \"Sem óleo, 7 programas automáticos, timer digital, capacidade 4.1L\",\n  \"platform\": \"TIKTOK\",\n  \"format\": \"REELS\",\n  \"tone\": \"energético e descontraído\",\n  \"duration\": \"60 segundos\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiro",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiro"]
+            }
+          }
+        },
+        {
+          "name": "Listar Meus Roteiros",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "Buscar Roteiro por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros/{{scriptId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros", "{{scriptId}}"]
+            }
+          }
+        },
+        {
+          "name": "Roteiros por Produto",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/studio/roteiros/produto/{{productId}}?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "studio", "roteiros", "produto", "{{productId}}"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vídeos",
+      "description": "Pipeline de geração de vídeo: ElevenLabs (áudio) → HeyGen (vídeo). Processamento assíncrono — use 'Status do Job' para fazer polling até COMPLETED.",
+      "item": [
+        {
+          "name": "Iniciar Geração",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('videoJobId', json.id);",
+                  "  console.log('videoJobId salvo:', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scriptId\": \"{{scriptId}}\",\n  \"avatarId\": null,\n  \"voiceId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/videos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Retorna 202 Accepted. O job é processado de forma assíncrona. Use 'Status do Job' para acompanhar o progresso."
+          }
+        },
+        {
+          "name": "Status do Job",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/videos/{{videoJobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos", "{{videoJobId}}"]
+            },
+            "description": "Polling para verificar o status: PENDING → GENERATING_AUDIO → GENERATING_VIDEO → COMPLETED (ou FAILED)."
+          }
+        },
+        {
+          "name": "Listar Meus Vídeos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/videos?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Radar — Produtos",
+      "description": "Busca e descoberta de produtos afiliados em alta. Endpoints públicos (sem auth).",
+      "item": [
+        {
+          "name": "Listar Produtos em Alta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "var items = json.content || json;",
+                  "if (Array.isArray(items) && items.length > 0) {",
+                  "  pm.collectionVariables.set('productId', items[0].id);",
+                  "  console.log('productId salvo:', items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar?page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar"],
+              "query": [{ "key": "page", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "Listar Produtos — Com Filtros",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar?category=Eletronicos&platform=MERCADO_LIVRE&search=airfryer&page=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar"],
+              "query": [
+                { "key": "category", "value": "Eletronicos" },
+                { "key": "platform", "value": "MERCADO_LIVRE" },
+                { "key": "search", "value": "airfryer" },
+                { "key": "page", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Trending (Top 10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (Array.isArray(json) && json.length > 0) {",
+                  "  pm.collectionVariables.set('productId', json[0].id);",
+                  "  console.log('productId salvo:', json[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar/trending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar", "trending"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Produto por ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "Listar Categorias",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/radar/categorias",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "radar", "categorias"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

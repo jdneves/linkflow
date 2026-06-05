@@ -52,6 +52,10 @@ dependencies {
     // HTTP Client (chamadas para Claude, HeyGen, ElevenLabs)
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+    // AWS SDK v2 — Cloudflare R2 (compatível com S3)
+    implementation platform('software.amazon.awssdk:bom:2.26.12')
+    implementation 'software.amazon.awssdk:s3'
+
     // Testes
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

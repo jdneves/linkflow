@@ -38,6 +38,7 @@ public class SecurityConfig {
     // Rotas públicas — sem autenticação
     private static final String[] PUBLIC_ROUTES = {
         "/api/auth/**",
+        "/api/radar/**",  // busca de produtos é pública
         "/r/**",          // redirect de links curtos
         "/actuator/health",
         "/v3/api-docs/**",
