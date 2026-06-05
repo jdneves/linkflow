@@ -30,6 +30,7 @@ public class JwtService {
     public String generateAccessToken(User user) {
         return Jwts.builder()
             .subject(user.getEmail())
+            .id(UUID.randomUUID().toString())
             .claims(Map.of(
                 "userId", user.getId().toString(),
                 "plan",   user.getPlan().name()

@@ -27,6 +27,34 @@ public class ClaudeClient {
     @Value("${linkflow.claude.model}")
     private String model;
 
+    @Value("${linkflow.claude.mock:false}")
+    private boolean mock;
+
+    private static final String MOCK_RESPONSE = """
+        {
+          "titulo_sugerido": "Essa Airfryer VAI MUDAR sua cozinha! 🔥",
+          "gancho_abertura": "Você ainda usa óleo pra fritar? Deixa eu te mostrar como fazer tudo isso sem uma gota de óleo — e em metade do tempo!",
+          "topicos": [
+            "Tecnologia Rapid Air: como circula o ar quente e elimina o óleo",
+            "7 programas pré-definidos: frango, batata, peixe e mais",
+            "Timer digital com desligamento automático — sem queimar nada",
+            "Capacidade 4.1L: suficiente pra família inteira",
+            "Economia de energia comparado ao forno convencional"
+          ],
+          "cta_afiliado": "Gostou? O link tá na descrição com o melhor preço que eu encontrei — aproveita porque tá em promoção!",
+          "legenda_instagram": "🍟 Fritas SEM ÓLEO e com o dobro de sabor!\\n\\nFaz 3 meses que eu troquei minha fritadeira pela Airfryer Philips Walita e não volto atrás. Frango crocante, batata frita, até bolo já fiz aqui 👇\\n\\nO link com o preço especial tá na bio! ✨",
+          "hashtags": ["#airfryer", "#receitassaudaveis", "#semóleo", "#philips", "#cozinhasaudavel", "#dicasdellar", "#vidadietética", "#afiliados"],
+          "stories": [
+            "Slide 1: 'Você sabia que dá pra fritar SEM ÓLEO? 👀'",
+            "Slide 2: 'A Airfryer Philips tem 7 modos automáticos 🔥'",
+            "Slide 3: 'Fiz batata frita em 15 minutos ⏱️'",
+            "Slide 4: 'Capacidade pra família toda — 4.1 litros!'",
+            "Slide 5: 'Link na bio com o melhor preço 👇 Corre!'"
+          ]
+        }
+        """;
+
+
     private final HttpClient httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .build();
@@ -34,6 +62,7 @@ public class ClaudeClient {
     private final ObjectMapper objectMapper;
 
     public String completar(String prompt) {
+        if (mock) return MOCK_RESPONSE;
         try {
             String body = objectMapper.writeValueAsString(new ClaudeRequest(
                 model,
