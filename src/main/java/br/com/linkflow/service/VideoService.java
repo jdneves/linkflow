@@ -14,6 +14,8 @@ import br.com.linkflow.entity.VideoMode;
 import br.com.linkflow.exception.BusinessException;
 import br.com.linkflow.repository.ScriptRepository;
 import br.com.linkflow.repository.VideoJobRepository;
+import br.com.linkflow.video.faceless.FacelessRenderInput;
+import br.com.linkflow.video.faceless.FacelessVideoRenderer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +43,7 @@ public class VideoService {
     private final StorageClient storageClient;
     private final JavaMailSender mailSender;
     private final OnboardingService onboardingService;
+    private final FacelessVideoRenderer facelessVideoRenderer;
 
     // ── Inicia o pipeline ─────────────────────────────────────────────────
 
@@ -82,20 +85,20 @@ public class VideoService {
         VideoJob job = videoJobRepository.findById(jobId).orElseThrow();
 
         try {
-            // PASSO 1: Gera áudio com ElevenLabs
+            // PASSO 1: Gera áudio com ElevenLabs (mesma extração de texto do roteiro)
             log.info("[Job {}] Gerando áudio com ElevenLabs...", jobId);
             atualizarStatus(job, Status.GENERATING_AUDIO, null);
 
             String textoNarracao = construirTextoNarracao(job.getScript());
-            byte[] mp3 = elevenLabsClient.textToSpeech(textoNarracao, job.getVoiceId());
-            String audioUrl = storageClient.uploadAudio(mp3, jobId);
-
-            job.setAudioUrl(audioUrl);
-            videoJobRepository.save(job);
 
             // PASSO 2: Ramificação por modo
             if (job.getMode() == VideoMode.AVATAR) {
                 // Pipeline com avatar (HeyGen)
+                byte[] mp3 = elevenLabsClient.textToSpeech(textoNarracao, job.getVoiceId());
+                String audioUrl = storageClient.uploadAudio(mp3, jobId);
+                job.setAudioUrl(audioUrl);
+                videoJobRepository.save(job);
+
                 log.info("[Job {}] Submetendo ao HeyGen (AVATAR)...", jobId);
                 atualizarStatus(job, Status.GENERATING_VIDEO, null);
 
@@ -106,23 +109,38 @@ public class VideoService {
                 log.info("[Job {}] HeyGen job submetido: heygenId={} — aguardando polling...", jobId, heygenVideoId);
 
             } else {
-                // Pipeline faceless (sem HeyGen)
-                log.info("[Job {}] Gerando vídeo FACELESS (sem avatar)...", jobId);
+                // Pipeline faceless (ffmpeg, sem HeyGen) — locução com timestamps p/ legendas
+                ElevenLabsClient.TimedSpeech narracao =
+                    elevenLabsClient.textToSpeechWithTimestamps(textoNarracao, job.getVoiceId());
+                String audioUrl = storageClient.uploadAudio(narracao.audio(), jobId);
+                job.setAudioUrl(audioUrl);
+                videoJobRepository.save(job);
+
+                log.info("[Job {}] Renderizando vídeo FACELESS (ffmpeg)...", jobId);
                 atualizarStatus(job, Status.GENERATING_VIDEO, null);
 
-                // TODO: Implementar FacelessVideoRenderer
-                // String videoUrl = facelessVideoRenderer.render(audioUrl, job.getScript());
-                // job.setVideoUrl(videoUrl);
-                // job.setStatus(Status.COMPLETED);
-                // job.setCompletedAt(LocalDateTime.now());
-                // videoJobRepository.save(job);
-                // onboardingService.concluirPasso(job.getUser(), OnboardingService.PASSO_VIDEO);
-                // notificarConclusao(job);
+                String productImageUrl = job.getScript().getProduct() != null
+                    ? job.getScript().getProduct().getImageUrl()
+                    : null;
 
-                throw new UnsupportedOperationException(
-                    "Renderização de vídeos FACELESS ainda não implementada. " +
-                    "Aguarde próxima atualização ou use modo AVATAR."
+                FacelessRenderInput input = new FacelessRenderInput(
+                    jobId,
+                    narracao.audio(),
+                    narracao.durationSeconds(),
+                    textoNarracao,
+                    narracao.wordTimings(),
+                    productImageUrl,
+                    job.getScript().getProductName()
                 );
+                String videoUrl = facelessVideoRenderer.render(input);
+
+                job.setVideoUrl(videoUrl);
+                job.setStatus(Status.COMPLETED);
+                job.setCompletedAt(LocalDateTime.now());
+                videoJobRepository.save(job);
+                onboardingService.concluirPasso(job.getUser(), OnboardingService.PASSO_VIDEO);
+                notificarConclusao(job);
+                log.info("[Job {}] Vídeo FACELESS concluído: {}", jobId, videoUrl);
             }
 
         } catch (Exception e) {

@@ -226,4 +226,71 @@ Nenhuma nova variável necessária. Todas as configurações estão em código (
 - Limites ilimitados são representados por valores `<= 0` para scripts/faceless/links
 - Avatar com limite `<= 0` significa **bloqueado**, não ilimitado
 - A contagem de vídeos é separada por modo (faceless vs avatar)
-- Vídeos FACELESS ainda não são renderizados (retorna erro amigável)
+
+---
+
+# Changelog v5.1 — Renderização FACELESS com ffmpeg
+
+## Resumo
+
+O modo **FACELESS** agora **renderiza vídeos de verdade**. Substituímos o
+`UnsupportedOperationException` por um pipeline ffmpeg real, atrás de uma
+interface (`FacelessVideoRenderer`) que permite trocar o motor (ex.: Remotion)
+no futuro sem reescrever o `VideoService`.
+
+**Mudança somente de backend** — não altera contrato (`mode`, `usoPlano`, DTOs)
+nem o frontend. O caminho AVATAR (HeyGen) permanece inalterado.
+
+## O que o pipeline FACELESS faz
+
+Dado um roteiro + locução (ElevenLabs), produz um short vertical
+**9:16 (1080x1920)** com:
+- **Fundo:** imagem de produto com Ken Burns (`zoompan` + backdrop borrado) quando
+  `faceless.background=product` e o roteiro tem produto com imagem; caso contrário,
+  um **gradiente de marca**.
+- **Locução** como trilha de áudio; **duração do vídeo = duração do áudio**.
+- **Legendas sincronizadas (burn-in)** via arquivo **ASS** (fonte grande, contorno
+  grosso, embaixo-centro), usando timestamps reais do ElevenLabs.
+- Saída `libx264` / `yuv420p` / AAC / ~30fps / `+faststart`, enviada ao **R2**.
+
+Status seguem as mesmas transições do AVATAR:
+`PENDING → GENERATING_AUDIO → GENERATING_VIDEO → COMPLETED` (erro → `FAILED`).
+
+## Novos componentes
+
+- `FacelessVideoRenderer` (interface) + `FacelessRenderInput` (DTO) + `WordTiming`.
+- `FfmpegFacelessVideoRenderer` — `ProcessBuilder`, diretório temporário com
+  **cleanup no `finally`** (proteção contra vazamento de disco no Render free tier),
+  upload do MP4 no R2 via `StorageClient`.
+- `AssSubtitleBuilder` — geração de ASS a partir dos timings, com **fallback uniforme**
+  quando não há timestamps.
+- `ElevenLabsClient.textToSpeechWithTimestamps(...)` — endpoint `/with-timestamps`
+  (áudio + alinhamento por caractere → palavras → blocos de 3–5).
+- `FacelessProperties` (`@ConfigurationProperties("faceless")`) com defaults seguros.
+
+## Configuração (`faceless.*`)
+
+| Propriedade | Default | Env |
+|-------------|---------|-----|
+| `faceless.width` | `1080` | `FACELESS_WIDTH` |
+| `faceless.height` | `1920` | `FACELESS_HEIGHT` |
+| `faceless.fps` | `30` | `FACELESS_FPS` |
+| `faceless.font-path` | `/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf` | `FACELESS_FONT_PATH` |
+| `faceless.font-name` | `DejaVu Sans` | `FACELESS_FONT_NAME` |
+| `faceless.background` | `gradient` (`gradient`\|`product`) | `FACELESS_BACKGROUND` |
+| `faceless.ffmpeg-path` | `ffmpeg` | `FACELESS_FFMPEG_PATH` |
+| `faceless.ffprobe-path` | `ffprobe` | `FACELESS_FFPROBE_PATH` |
+| `faceless.max-words-per-block` | `4` | `FACELESS_MAX_WORDS` |
+
+## Deploy / infra
+
+⚠️ **O container precisa de ffmpeg + fontes.** O `Dockerfile` passou a instalar
+`ffmpeg`, `fonts-dejavu-core` e `fontconfig` (base mudou para `eclipse-temurin:21-jre`
+Debian). Sem a fonte, as legendas ASS não renderizam.
+
+## Testes
+
+- `AssSubtitleBuilderTest` — geração de ASS (timings reais + fallback uniforme), sem ffmpeg.
+- `ElevenLabsClientTest` — conversão char-alignment → palavras.
+- `FfmpegFacelessVideoRendererIT` — `@Tag("ffmpeg")`, renderiza um clipe curto com áudio
+  fake e valida a duração do MP4; **pula** automaticamente onde não há ffmpeg.
