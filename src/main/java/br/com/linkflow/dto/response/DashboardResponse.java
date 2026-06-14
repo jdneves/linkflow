@@ -46,7 +46,8 @@ public record DashboardResponse(
     public record UsoPlano(
         String plano,
         long rotelirosMes,      int limiteRoteiros,
-        long videosMes,         int limiteVideos,
+        long facelessMes,       int limiteFaceless,
+        long avatarMes,         int limiteAvatar,
         long linksAtivos,       int limiteLinks
     ) {}
 }

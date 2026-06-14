@@ -96,7 +96,7 @@ scheduler/   → Background jobs (@Scheduled)
 ### Database Schema
 
 **Core tables:**
-- `users` - User accounts with plan (FREE/CREATOR/PRO), email (unique), password (BCrypt)
+- `users` - User accounts with plan (FREE/INICIANTE/PRO/MASTER), email (unique), password (BCrypt)
 - `refresh_tokens` - JWT refresh tokens with expiration
 - `products` - Product catalog from affiliate platforms (Mercado Livre, Shopee, Amazon)
 - `scripts` - AI-generated video scripts (title, hook, topics, CTA)
@@ -142,12 +142,24 @@ linkflow.storage.bucket=${R2_BUCKET}
 
 ### User Plans & Limits
 
-Three tiers with different quotas:
-- **FREE** - Limited scripts/videos per month
-- **CREATOR** - Medium limits
-- **PRO** - High limits
+Four tiers with different monthly quotas:
 
-Limits tracked in `plan_usage` table, reset monthly. Enforce limits in service layer before expensive operations (AI calls, video generation).
+| Plano | Roteiros | Vídeos FACELESS | Vídeos AVATAR | Links |
+|-------|----------|-----------------|---------------|-------|
+| FREE | 5 | 3 | 0 (bloqueado) | 10 |
+| INICIANTE | 20 | 15 | 0 (bloqueado) | 30 |
+| PRO | 50 | 20 | 10 | 100 |
+| MASTER | -1 (ilimitado) | 40 | 20 | -1 (ilimitado) |
+
+**Video modes:**
+- **FACELESS** - Videos without presenter (audio + product images/clips)
+- **AVATAR** - Videos with virtual presenter via HeyGen (premium feature)
+
+**Limit conventions:**
+- For scripts, faceless videos, and links: `limit <= 0` means **unlimited**
+- For avatar videos: `limit <= 0` means **not included in plan (blocked)**, never unlimited
+
+Limits are enforced in service layer before expensive operations. Configuration in `PlanLimits` class.
 
 ### DTO Patterns
 

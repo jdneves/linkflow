@@ -3,11 +3,14 @@ package br.com.linkflow.service;
 import br.com.linkflow.client.ElevenLabsClient;
 import br.com.linkflow.client.HeyGenClient;
 import br.com.linkflow.client.StorageClient;
+import br.com.linkflow.config.PlanLimits;
+import br.com.linkflow.dto.request.VideoCreateRequest;
 import br.com.linkflow.dto.response.VideoJobResponse;
 import br.com.linkflow.entity.Script;
 import br.com.linkflow.entity.User;
 import br.com.linkflow.entity.VideoJob;
 import br.com.linkflow.entity.VideoJob.Status;
+import br.com.linkflow.entity.VideoMode;
 import br.com.linkflow.exception.BusinessException;
 import br.com.linkflow.repository.ScriptRepository;
 import br.com.linkflow.repository.VideoJobRepository;
@@ -39,17 +42,13 @@ public class VideoService {
     private final JavaMailSender mailSender;
     private final OnboardingService onboardingService;
 
-    // Limite mensal por plano
-    private static final int LIMITE_FREE    = 2;
-    private static final int LIMITE_CREATOR = 15;
-
     // ── Inicia o pipeline ─────────────────────────────────────────────────
 
     @Transactional
-    public VideoJobResponse iniciar(UUID scriptId, String avatarId, String voiceId, User user) {
-        validarLimite(user);
+    public VideoJobResponse iniciar(VideoCreateRequest request, User user) {
+        validarLimitePorModo(user, request.mode());
 
-        Script script = scriptRepository.findById(scriptId)
+        Script script = scriptRepository.findById(request.scriptId())
             .filter(s -> s.getUser().getId().equals(user.getId()))
             .orElseThrow(() -> new BusinessException("Roteiro não encontrado."));
 
@@ -60,13 +59,14 @@ public class VideoService {
         VideoJob job = VideoJob.builder()
             .user(user)
             .script(script)
-            .avatarId(avatarId)
-            .voiceId(voiceId)
+            .mode(request.mode())
+            .avatarId(request.avatarId())
+            .voiceId(request.voiceId())
             .status(Status.PENDING)
             .build();
 
         videoJobRepository.save(job);
-        log.info("Pipeline iniciado: jobId={} usuário={}", job.getId(), user.getEmail());
+        log.info("Pipeline iniciado: jobId={} modo={} usuário={}", job.getId(), request.mode(), user.getEmail());
 
         // Executa o pipeline de forma assíncrona
         executarPipeline(job.getId());
@@ -93,15 +93,37 @@ public class VideoService {
             job.setAudioUrl(audioUrl);
             videoJobRepository.save(job);
 
-            // PASSO 2: Envia para o HeyGen (job assíncrono)
-            log.info("[Job {}] Submetendo ao HeyGen...", jobId);
-            atualizarStatus(job, Status.GENERATING_VIDEO, null);
+            // PASSO 2: Ramificação por modo
+            if (job.getMode() == VideoMode.AVATAR) {
+                // Pipeline com avatar (HeyGen)
+                log.info("[Job {}] Submetendo ao HeyGen (AVATAR)...", jobId);
+                atualizarStatus(job, Status.GENERATING_VIDEO, null);
 
-            String heygenVideoId = heyGenClient.submeterVideo(audioUrl, job.getAvatarId());
-            job.setHeygenVideoId(heygenVideoId);
-            videoJobRepository.save(job);
-            onboardingService.concluirPasso(job.getUser(), OnboardingService.PASSO_VIDEO);
-            log.info("[Job {}] HeyGen job submetido: heygenId={} — aguardando polling...", jobId, heygenVideoId);
+                String heygenVideoId = heyGenClient.submeterVideo(audioUrl, job.getAvatarId());
+                job.setHeygenVideoId(heygenVideoId);
+                videoJobRepository.save(job);
+                onboardingService.concluirPasso(job.getUser(), OnboardingService.PASSO_VIDEO);
+                log.info("[Job {}] HeyGen job submetido: heygenId={} — aguardando polling...", jobId, heygenVideoId);
+
+            } else {
+                // Pipeline faceless (sem HeyGen)
+                log.info("[Job {}] Gerando vídeo FACELESS (sem avatar)...", jobId);
+                atualizarStatus(job, Status.GENERATING_VIDEO, null);
+
+                // TODO: Implementar FacelessVideoRenderer
+                // String videoUrl = facelessVideoRenderer.render(audioUrl, job.getScript());
+                // job.setVideoUrl(videoUrl);
+                // job.setStatus(Status.COMPLETED);
+                // job.setCompletedAt(LocalDateTime.now());
+                // videoJobRepository.save(job);
+                // onboardingService.concluirPasso(job.getUser(), OnboardingService.PASSO_VIDEO);
+                // notificarConclusao(job);
+
+                throw new UnsupportedOperationException(
+                    "Renderização de vídeos FACELESS ainda não implementada. " +
+                    "Aguarde próxima atualização ou use modo AVATAR."
+                );
+            }
 
         } catch (Exception e) {
             log.error("[Job {}] Falha no pipeline: {}", jobId, e.getMessage(), e);
@@ -180,17 +202,35 @@ public class VideoService {
         videoJobRepository.save(job);
     }
 
-    private void validarLimite(User user) {
-        long usados = videoJobRepository.countByUserThisMonth(user);
-        int limite = switch (user.getPlan()) {
-            case FREE    -> LIMITE_FREE;
-            case CREATOR -> LIMITE_CREATOR;
-            case PRO     -> Integer.MAX_VALUE;
-        };
-        if (usados >= limite) {
-            throw new BusinessException(
-                "Limite de %d vídeos/mês atingido. Faça upgrade do plano.".formatted(limite)
-            );
+    private void validarLimitePorModo(User user, VideoMode mode) {
+        PlanLimits limits = PlanLimits.of(user.getPlan());
+
+        if (mode == VideoMode.AVATAR) {
+            // Avatar: limite <= 0 = bloqueado (não incluído no plano)
+            if (!limits.hasAvatarVideos()) {
+                throw new BusinessException(
+                    "Vídeos com avatar não estão disponíveis no seu plano. " +
+                    "Faça upgrade para o Pro ou Master."
+                );
+            }
+
+            long avatarMes = videoJobRepository.countByUserAndModeThisMonth(user, VideoMode.AVATAR);
+            if (avatarMes >= limits.getAvatarVideos()) {
+                throw new BusinessException(
+                    "Você atingiu o limite de vídeos com avatar do seu plano este mês."
+                );
+            }
+
+        } else {
+            // Faceless: limite <= 0 = ilimitado
+            if (!limits.hasUnlimitedFacelessVideos()) {
+                long facelessMes = videoJobRepository.countByUserAndModeThisMonth(user, VideoMode.FACELESS);
+                if (facelessMes >= limits.getFacelessVideos()) {
+                    throw new BusinessException(
+                        "Você atingiu o limite de vídeos sem avatar do seu plano este mês."
+                    );
+                }
+            }
         }
     }
 

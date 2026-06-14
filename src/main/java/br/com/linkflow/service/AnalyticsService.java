@@ -1,10 +1,12 @@
 package br.com.linkflow.service;
 
 import br.com.linkflow.client.ClaudeClient;
+import br.com.linkflow.config.PlanLimits;
 import br.com.linkflow.dto.response.DashboardResponse;
 import br.com.linkflow.dto.response.DashboardResponse.*;
 import br.com.linkflow.dto.response.RelatorioSemanalResponse;
 import br.com.linkflow.entity.User;
+import br.com.linkflow.entity.VideoMode;
 import br.com.linkflow.repository.AffiliateLinkRepository;
 import br.com.linkflow.repository.ClickRepository;
 import br.com.linkflow.repository.ScriptRepository;
@@ -39,13 +41,6 @@ public class AnalyticsService {
     @Value("${linkflow.base-url}")
     private String baseUrl;
 
-    // Limites por plano (espelha os outros serviços)
-    private static final Map<User.Plan, int[]> LIMITES = Map.of(
-        User.Plan.FREE,    new int[]{ 5,  2,  10 },
-        User.Plan.CREATOR, new int[]{ 30, 15, 50 },
-        User.Plan.PRO,     new int[]{ Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE }
-    );
-
     // ── Dashboard principal ────────────────────────────────────────────────
 
     public DashboardResponse dashboard(User user) {
@@ -58,11 +53,12 @@ public class AnalyticsService {
         long totalCliques7d  = clickRepository.totalClicksUsuario(user.getId(), ha7Dias);
         long totalLinks      = linkRepository.countActiveByUser(user);
         long totalRoteiros   = scriptRepository.countByUserThisMonth(user);
-        long totalVideos     = videoJobRepository.countByUserThisMonth(user);
+        long facelessMes     = videoJobRepository.countByUserAndModeThisMonth(user, VideoMode.FACELESS);
+        long avatarMes       = videoJobRepository.countByUserAndModeThisMonth(user, VideoMode.AVATAR);
 
         Totais totais = new Totais(
             totalCliques30d + totalCliques7d,
-            totalLinks, totalRoteiros, totalVideos,
+            totalLinks, totalRoteiros, facelessMes + avatarMes,
             totalCliques30d, totalCliques7d
         );
 
@@ -103,12 +99,17 @@ public class AnalyticsService {
         String insight = gerarInsight(user, topLinks, totalCliques7d, totalCliques30d);
 
         // ── Uso do plano ──
-        int[] limites = LIMITES.getOrDefault(user.getPlan(), LIMITES.get(User.Plan.FREE));
+        PlanLimits limits = PlanLimits.of(user.getPlan());
         UsoPlano usoPlano = new UsoPlano(
             user.getPlan().name(),
-            totalRoteiros, limites[0] == Integer.MAX_VALUE ? -1 : limites[0],
-            totalVideos,   limites[1] == Integer.MAX_VALUE ? -1 : limites[1],
-            totalLinks,    limites[2] == Integer.MAX_VALUE ? -1 : limites[2]
+            totalRoteiros,
+            limits.hasUnlimitedScripts() ? -1 : limits.getScripts(),
+            facelessMes,
+            limits.hasUnlimitedFacelessVideos() ? -1 : limits.getFacelessVideos(),
+            avatarMes,
+            limits.getAvatarVideos(),
+            totalLinks,
+            limits.hasUnlimitedLinks() ? -1 : limits.getLinks()
         );
 
         return new DashboardResponse(totais, cliquesDia, porDevice, topLinks, insight, usoPlano);

@@ -2,6 +2,7 @@ package br.com.linkflow.repository;
 
 import br.com.linkflow.entity.VideoJob;
 import br.com.linkflow.entity.VideoJob.Status;
+import br.com.linkflow.entity.VideoMode;
 import br.com.linkflow.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +24,7 @@ public interface VideoJobRepository extends JpaRepository<VideoJob, UUID> {
 
     @Query("SELECT COUNT(v) FROM VideoJob v WHERE v.user = :user AND MONTH(v.createdAt) = MONTH(CURRENT_DATE) AND YEAR(v.createdAt) = YEAR(CURRENT_DATE)")
     long countByUserThisMonth(@Param("user") User user);
+
+    @Query("SELECT COUNT(v) FROM VideoJob v WHERE v.user = :user AND v.mode = :mode AND MONTH(v.createdAt) = MONTH(CURRENT_DATE) AND YEAR(v.createdAt) = YEAR(CURRENT_DATE)")
+    long countByUserAndModeThisMonth(@Param("user") User user, @Param("mode") VideoMode mode);
 }

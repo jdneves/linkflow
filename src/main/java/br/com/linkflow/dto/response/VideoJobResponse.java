@@ -7,11 +7,12 @@ import java.util.UUID;
 
 public record VideoJobResponse(
     UUID id,
-    String status,
-    String audioUrl,
-    String videoUrl,
     String scriptId,
     String productName,
+    String status,
+    String mode,
+    String audioUrl,
+    String videoUrl,
     String errorMessage,
     LocalDateTime createdAt,
     LocalDateTime completedAt
@@ -19,11 +20,12 @@ public record VideoJobResponse(
     public static VideoJobResponse from(VideoJob job) {
         return new VideoJobResponse(
             job.getId(),
-            job.getStatus().name(),
-            job.getAudioUrl(),
-            job.getVideoUrl(),
             job.getScript() != null ? job.getScript().getId().toString() : null,
             job.getScript() != null ? job.getScript().getProductName() : null,
+            job.getStatus().name(),
+            job.getMode().name(),
+            job.getAudioUrl(),
+            job.getVideoUrl(),
             job.getErrorMessage(),
             job.getCreatedAt(),
             job.getCompletedAt()

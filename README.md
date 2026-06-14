@@ -123,9 +123,19 @@ A API estará disponível em `http://localhost:8080`.
 
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| POST | `/api/videos` | Bearer | Iniciar geração de vídeo |
+| POST | `/api/videos` | Bearer | Iniciar geração de vídeo (FACELESS ou AVATAR) |
 | GET | `/api/videos/{id}` | Bearer | Status do job de vídeo |
 | GET | `/api/videos` | Bearer | Listar vídeos do usuário |
+
+**Request body (POST /api/videos):**
+```json
+{
+  "scriptId": "uuid-do-roteiro",
+  "mode": "FACELESS",  // ou "AVATAR"
+  "avatarId": "...",   // opcional, obrigatório se mode=AVATAR
+  "voiceId": "..."     // opcional
+}
+```
 
 ### Links Afiliados
 
@@ -183,6 +193,12 @@ curl -X POST http://localhost:8080/api/studio/roteiro \
   -H "Authorization: Bearer SEU_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"productId":"uuid-do-produto","tone":"INFORMAL","duration":60}'
+
+# 5. Iniciar vídeo FACELESS
+curl -X POST http://localhost:8080/api/videos \
+  -H "Authorization: Bearer SEU_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"scriptId":"uuid-do-roteiro","mode":"FACELESS"}'
 ```
 
 Uma coleção Postman completa está disponível em [`postman/LinkFlow.postman_collection.json`](postman/LinkFlow.postman_collection.json).
@@ -242,15 +258,23 @@ src/main/resources/
 └── db/migration/            # Scripts Flyway (V1__, V2__, ...)
 ```
 
-## Planos de uso
+## Planos e Limites
 
-| Plano | Descrição |
-|-------|-----------|
-| FREE | Roteiros e vídeos limitados por mês |
-| CREATOR | Limites intermediários |
-| PRO | Limites elevados |
+O LinkFlow oferece quatro planos com cotas mensais diferenciadas:
 
-Os limites são rastreados na tabela `plan_usage` e resetados mensalmente.
+| Plano | Roteiros | Vídeos FACELESS | Vídeos AVATAR | Links |
+|-------|----------|----------------|---------------|-------|
+| **FREE** | 5 | 3 | 🚫 Bloqueado | 10 |
+| **INICIANTE** | 20 | 15 | 🚫 Bloqueado | 30 |
+| **PRO** | 50 | 20 | 10 | 100 |
+| **MASTER** | ∞ Ilimitado | 40 | 20 | ∞ Ilimitado |
+
+### Modos de vídeo
+
+- **FACELESS**: Vídeos sem apresentador (áudio + imagens/clipes do produto)
+- **AVATAR**: Vídeos com apresentador virtual via HeyGen (recurso premium)
+
+Os limites são resetados mensalmente. Vídeos com avatar são exclusivos dos planos PRO e MASTER.
 
 ## Licença
 

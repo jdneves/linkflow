@@ -9,7 +9,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "video_jobs", indexes = {
     @Index(name = "idx_video_jobs_user_id", columnList = "user_id"),
-    @Index(name = "idx_video_jobs_status",  columnList = "status")
+    @Index(name = "idx_video_jobs_status",  columnList = "status"),
+    @Index(name = "idx_video_jobs_mode", columnList = "mode"),
+    @Index(name = "idx_video_jobs_user_created", columnList = "user_id, created_at")
 })
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
@@ -26,6 +28,11 @@ public class VideoJob {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "script_id")
     private Script script;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private VideoMode mode = VideoMode.AVATAR;
 
     // IDs externos das APIs
     @Column(name = "heygen_video_id", length = 200)

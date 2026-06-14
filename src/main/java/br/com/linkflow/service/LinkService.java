@@ -1,5 +1,6 @@
 package br.com.linkflow.service;
 
+import br.com.linkflow.config.PlanLimits;
 import br.com.linkflow.dto.request.LinkRequest;
 import br.com.linkflow.dto.response.LinkResponse;
 import br.com.linkflow.entity.AffiliateLink;
@@ -39,10 +40,6 @@ public class LinkService {
 
     @Value("${linkflow.base-url}")
     private String baseUrl;
-
-    // Limites de links ativos por plano
-    private static final int LIMITE_FREE    = 10;
-    private static final int LIMITE_CREATOR = 50;
 
     // ── Criação ───────────────────────────────────────────────────────────
 
@@ -144,16 +141,15 @@ public class LinkService {
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private void validarLimite(User user) {
-        long ativos = linkRepository.countActiveByUser(user);
-        int limite = switch (user.getPlan()) {
-            case FREE    -> LIMITE_FREE;
-            case CREATOR -> LIMITE_CREATOR;
-            case PRO     -> Integer.MAX_VALUE;
-        };
-        if (ativos >= limite) {
-            throw new BusinessException(
-                "Limite de %d links ativos atingido. Faça upgrade do plano.".formatted(limite)
-            );
+        PlanLimits limits = PlanLimits.of(user.getPlan());
+
+        if (!limits.hasUnlimitedLinks()) {
+            long ativos = linkRepository.countActiveByUser(user);
+            if (ativos >= limits.getLinks()) {
+                throw new BusinessException(
+                    "Limite de %d links ativos atingido. Faça upgrade do plano.".formatted(limits.getLinks())
+                );
+            }
         }
     }
 

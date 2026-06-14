@@ -1,6 +1,7 @@
 package br.com.linkflow.service;
 
 import br.com.linkflow.client.ClaudeClient;
+import br.com.linkflow.config.PlanLimits;
 import br.com.linkflow.dto.request.ScriptRequest;
 import br.com.linkflow.dto.response.ScriptResponse;
 import br.com.linkflow.entity.Product;
@@ -30,10 +31,6 @@ public class ScriptService {
     private final ClaudeClient claudeClient;
     private final ObjectMapper objectMapper;
     private final OnboardingService onboardingService;
-
-    // Limites por plano
-    private static final int LIMITE_FREE    = 5;
-    private static final int LIMITE_CREATOR = 30;
 
     // ── Geração ───────────────────────────────────────────────────────────
 
@@ -104,16 +101,15 @@ public class ScriptService {
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private void validarLimiteMensal(User user) {
-        long usados = scriptRepository.countByUserThisMonth(user);
-        int limite = switch (user.getPlan()) {
-            case FREE    -> LIMITE_FREE;
-            case CREATOR -> LIMITE_CREATOR;
-            case PRO     -> Integer.MAX_VALUE;
-        };
-        if (usados >= limite) {
-            throw new BusinessException(
-                "Limite de %d roteiros/mês atingido. Faça upgrade do plano.".formatted(limite)
-            );
+        PlanLimits limits = PlanLimits.of(user.getPlan());
+
+        if (!limits.hasUnlimitedScripts()) {
+            long usados = scriptRepository.countByUserThisMonth(user);
+            if (usados >= limits.getScripts()) {
+                throw new BusinessException(
+                    "Limite de %d roteiros/mês atingido. Faça upgrade do plano.".formatted(limits.getScripts())
+                );
+            }
         }
     }
 

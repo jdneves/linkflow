@@ -65,5 +65,5 @@ public class User implements UserDetails {
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() { return active; }
 
-    public enum Plan { FREE, CREATOR, PRO }
+    public enum Plan { FREE, INICIANTE, PRO, MASTER }
 }
