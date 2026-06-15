@@ -11,6 +11,11 @@ jobs:
     name: Build e Testes
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
     services:
       postgres:
         image: postgres:16-alpine
