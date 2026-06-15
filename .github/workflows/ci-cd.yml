@@ -64,10 +64,14 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
+    # Secrets não podem ser usados diretamente em condições; expomos via env do job
+    # para que o passo de deploy seja pulado (sem falhar) quando o hook não existir.
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+
     steps:
       - name: Trigger deploy no Render
+        if: env.RENDER_DEPLOY_HOOK != ''
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
+          curl -X POST "$RENDER_DEPLOY_HOOK" \
             -H "Content-Type: application/json"
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
