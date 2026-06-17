@@ -3,22 +3,43 @@
 # Troca um authorization_code do Mercado Livre por access_token + refresh_token
 # e grava ML_CLIENT_ID / ML_CLIENT_SECRET / ML_REFRESH_TOKEN no .env.
 #
-# Uso:
-#   ./scripts/ml-exchange-token.sh TG-xxxxxxxxxxxx-xxxxxxxx
+# As credenciais NÃO ficam no script. Forneça-as por ambiente (ou pelo .env, que
+# é carregado automaticamente se existir):
+#
+#   ML_CLIENT_ID=...  ML_CLIENT_SECRET=...  ./scripts/ml-exchange-token.sh TG-xxxx
+#
+# Variáveis aceitas:
+#   ML_CLIENT_ID      (obrigatória)
+#   ML_CLIENT_SECRET  (obrigatória)
+#   ML_REDIRECT_URI   (opcional; default abaixo)
 #
 # O authorization_code é de USO ÚNICO e expira em ~10 min. Gere um novo pela
 # URL de autorização sempre que for rodar.
 
 set -euo pipefail
 
-CLIENT_ID="6518219682064923"
-CLIENT_SECRET="j0FinCAP0TQtReDZNrHePGdqSjZj4jd3"
-REDIRECT_URI="https://linkflow-api-vjqp.onrender.com/api/integrations/mercadolivre/callback"
 ENV_FILE="$(dirname "$0")/../.env"
+
+# Carrega o .env (se existir) para popular ML_CLIENT_ID/ML_CLIENT_SECRET/etc.
+# O ambiente do shell tem prioridade sobre o .env.
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+CLIENT_ID="${ML_CLIENT_ID:-}"
+CLIENT_SECRET="${ML_CLIENT_SECRET:-}"
+REDIRECT_URI="${ML_REDIRECT_URI:-https://linkflow-api-vjqp.onrender.com/api/integrations/mercadolivre/callback}"
 
 CODE="${1:-}"
 if [[ -z "$CODE" ]]; then
   echo "Erro: informe o authorization_code. Ex.: $0 TG-xxxx-xxxx" >&2
+  exit 1
+fi
+if [[ -z "$CLIENT_ID" || -z "$CLIENT_SECRET" ]]; then
+  echo "Erro: defina ML_CLIENT_ID e ML_CLIENT_SECRET (no ambiente ou no .env)." >&2
   exit 1
 fi
 
