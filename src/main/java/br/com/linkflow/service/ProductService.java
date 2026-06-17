@@ -89,7 +89,7 @@ public class ProductService {
     @Scheduled(cron = "0 0 */6 * * *") // a cada 6 horas
     @Transactional
     @CacheEvict(value = {"products", "trending-products"}, allEntries = true)
-    public void sincronizarProdutos() {
+    public int sincronizarProdutos() {
         log.info("Sincronizando produtos do radar...");
         int total = 0;
 
@@ -104,6 +104,7 @@ public class ProductService {
         }
 
         log.info("Sincronização concluída: {} produtos processados.", total);
+        return total;
     }
 
     /**
