@@ -104,6 +104,8 @@ public class MercadoLivreClient {
         String title = product.path("name").asText(null);
         String thumbnail = product.path("pictures").path(0).path("url").asText(null);
         String permalink = product.path("permalink").asText(null);
+        // Produto de catálogo traz a descrição em short_description.content (texto puro).
+        String description = product.path("short_description").path("content").asText(null);
 
         JsonNode offers = getJson(props.getApiBaseUrl() + "/products/" + productId + "/items?limit=1",
             token, "ofertas do produto " + productId);
@@ -119,7 +121,7 @@ public class MercadoLivreClient {
         if (permalink == null || permalink.isBlank()) {
             permalink = "https://www.mercadolivre.com.br/p/" + productId;
         }
-        return new MlItem(productId, title, price, originalPrice, thumbnail, permalink, categoryId);
+        return new MlItem(productId, title, description, price, originalPrice, thumbnail, permalink, categoryId);
     }
 
     /**
@@ -242,6 +244,7 @@ public class MercadoLivreClient {
     public record MlItem(
         String id,
         String title,
+        String description,
         BigDecimal price,
         BigDecimal originalPrice,
         String thumbnail,

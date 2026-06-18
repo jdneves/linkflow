@@ -73,7 +73,7 @@ public class MercadoLivreProductProvider implements ProductProvider {
             item.id(),
             Platform.MERCADO_LIVRE,
             item.title(),
-            null, // a busca não traz descrição; /items/{id} poderia complementar
+            item.description(), // de short_description.content do produto de catálogo
             item.price(),
             item.originalPrice(),
             commissionPct,
