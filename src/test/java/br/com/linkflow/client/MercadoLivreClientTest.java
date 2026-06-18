@@ -62,6 +62,7 @@ class MercadoLivreClientTest {
         // 3) Produto MLB123 (com permalink) + ofertas (com preço original)
         server.enqueue(json("""
             {"name":"Fone JBL","permalink":"https://ml/jbl",
+             "short_description":{"type":"plaintext","content":"Fone bluetooth com 40h de bateria"},
              "pictures":[{"url":"https://img/jbl.jpg"}]}
             """));
         server.enqueue(json("""
@@ -98,10 +99,13 @@ class MercadoLivreClientTest {
         assertThat(items).hasSize(2);
         assertThat(items.get(0).id()).isEqualTo("MLB123");
         assertThat(items.get(0).title()).isEqualTo("Fone JBL");
+        assertThat(items.get(0).description()).isEqualTo("Fone bluetooth com 40h de bateria");
         assertThat(items.get(0).price()).isEqualByComparingTo("199.90");
         assertThat(items.get(0).originalPrice()).isEqualByComparingTo("299.90");
         assertThat(items.get(0).thumbnail()).isEqualTo("https://img/jbl.jpg");
         assertThat(items.get(0).permalink()).isEqualTo("https://ml/jbl");
+        // Sem short_description no catálogo → descrição nula (sem quebrar o sync).
+        assertThat(items.get(1).description()).isNull();
         // Sem permalink no catálogo → URL do PDP é montada a partir do id.
         assertThat(items.get(1).originalPrice()).isNull();
         assertThat(items.get(1).permalink()).isEqualTo("https://www.mercadolivre.com.br/p/MLB456");
